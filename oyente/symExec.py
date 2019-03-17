@@ -227,7 +227,8 @@ def build_cfg_and_analyze(): #cfg 생성 및 실볼릭 실행 수행.
         collect_vertices(tokens)
         construct_bb()
         construct_static_edges()
-        full_sym_exec()  # jump targets are constructed on the fly
+        #full_sym_exec()  # jump targets are constructed on the fly
+
 
 def print_cfg():
     for block in vertices.values():
@@ -2461,6 +2462,10 @@ def analyze():
 
     run_build_cfg_and_analyze(timeout_cb=timeout_cb)
 
+
+def get_address():
+
+
 def run(disasm_file=None, source_file=None, source_map=None):
     global g_disasm_file
     global g_source_file
@@ -2475,8 +2480,9 @@ def run(disasm_file=None, source_file=None, source_map=None):
         test()
     else:
         begin = time.time()
-        log.info("\t============ Results ===========")
+
         analyze() # cfg 생성 및 symnolic execution
+        log.info("\t============ Results ===========")
         ret = detect_vulnerabilities()
         closing_message()
         return ret
