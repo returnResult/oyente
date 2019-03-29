@@ -21,6 +21,7 @@ from test_evm.global_test_params import (TIME_OUT, UNKNOWN_INSTRUCTION,
                                          EXCEPTION, PICKLE_PATH)
 from vulnerability import CallStack, TimeDependency, MoneyConcurrency, Reentrancy, AssertionFailure, ParityMultisigBug2, IntegerUnderflow, IntegerOverflow
 import global_params
+import random
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +31,52 @@ CONSTANT_ONES_159 = BitVecVal((1 << 160) - 1, 256)
 Assertion = namedtuple('Assertion', ['pc', 'model'])
 Underflow = namedtuple('Underflow', ['pc', 'model'])
 Overflow = namedtuple('Overflow', ['pc', 'model'])
+
+global addr_dic
+addr_dic = []
+
+class User:
+
+    def __init__(self, address):
+        self.addr = address
+        self.deposits = []
+        self.withdraws = []
+        self.deposits_sum = 0
+        self.withdraws_sum = 0
+
+    def add_withdraw(self, withdraw):
+        self.withdraws.append(withdraw)
+        self.withdraws_sum += withdraw
+
+    def add_deposit(self, deposit):
+        self.deposits.append(deposit)
+        self.deposits_sum += deposit
+
+    def rollback_withdraws(self, call_count):
+        for i in range(0,call_count):
+            self.withdraws_sum -= self.withdraws.pop(len(self.withdraws)-1)
+
+    def rollback_deposits(self):
+        self.deposits_sum -= self.deposits.pop(len(self.deposits)-1)
+
+
+    def get_withdraws(self):
+        return self.withdraws
+
+    def get_deposits(self):
+        return self.deposits
+
+    def get_address(self):
+        return self.addr
+
+    def get_last_deposit(self):
+        return self.deposits[len(self.deposits)-1]
+
+    def get_deposits_sum(self):
+        return self.deposits_sum
+
+    def get_withdraws_sum(self):
+        return self.withdraws_sum
 
 class Parameter:
     def __init__(self, **kwargs):
@@ -227,8 +274,7 @@ def build_cfg_and_analyze(): #cfg 생성 및 실볼릭 실행 수행.
         collect_vertices(tokens)
         construct_bb()
         construct_static_edges()
-        #full_sym_exec()  # jump targets are constructed on the fly
-
+        full_sym_exec_1()  # jump targets are constructed on the fly
 
 def print_cfg():
     for block in vertices.values():
@@ -304,6 +350,7 @@ def collect_vertices(tokens):
     wait_for_push = False
     is_new_block = False
 
+    #
     for tok_type, tok_string, (srow, scol), _, line_number in tokens:
         if wait_for_push is True:
             push_val = ""
@@ -521,6 +568,7 @@ def get_init_global_state(path_conditions_and_vars):
     return global_state
 
 def get_start_block_to_func_sig():
+
     state = 0
     func_sig = None
     for pc, instr in six.iteritems(instructions):
@@ -538,209 +586,8 @@ def get_start_block_to_func_sig():
             state = 0
     return start_block_to_func_sig
 
-def full_sym_exec():
-    # executing, starting from beginning
-    path_conditions_and_vars = {"path_condition" : []}
-    global_state = get_init_global_state(path_conditions_and_vars)
-    analysis = init_analysis()
-    params = Parameter(path_conditions_and_vars=path_conditions_and_vars, global_state=global_state, analysis=analysis)
-    if g_src_map:
-        start_block_to_func_sig = get_start_block_to_func_sig()
-    return sym_exec_block(params, 0, 0, 0, -1, 'fallback')
-
-
-# Symbolically executing a block from the start address
-def sym_exec_block(params, block, pre_block, depth, func_call, current_func_name):
-    global solver
-    global visited_edges
-    global visited_edges
-    global money_flow_all_paths
-    global path_conditions
-    global global_problematic_pcs
-    global all_gs
-    global results
-    global g_src_map
-
-    visited = params.visited
-    stack = params.stack
-    mem = params.mem
-    memory = params.memory
-    global_state = params.global_state
-    sha3_list = params.sha3_list
-    path_conditions_and_vars = params.path_conditions_and_vars
-    analysis = params.analysis
-    calls = params.calls
-    overflow_pcs = params.overflow_pcs
-
-    Edge = namedtuple("Edge", ["v1", "v2"]) # Factory Function for tuples is used as dictionary key
-    if block < 0:
-        log.debug("UNKNOWN JUMP ADDRESS. TERMINATING THIS PATH")
-        return ["ERROR"]
-
-    log.debug("Reach block address %d \n", block)
-
-    if g_src_map:
-        if block in start_block_to_func_sig:
-            func_sig = start_block_to_func_sig[block]
-            current_func_name = g_src_map.sig_to_func[func_sig]
-            pattern = r'(\w[\w\d_]*)\((.*)\)$'
-            match = re.match(pattern, current_func_name)
-            if match:
-                current_func_name =  list(match.groups())[0]
-
-    current_edge = Edge(pre_block, block)
-
-
-    if current_edge in visited_edges:
-        updated_count_number = visited_edges[current_edge] + 1
-        visited_edges.update({current_edge: updated_count_number})
-    else:
-        visited_edges.update({current_edge: 1})
-
-    if visited_edges[current_edge] > global_params.LOOP_LIMIT:
-        log.debug("Overcome a number of loop limit. Terminating this path ...")
-        return stack
-
-    current_gas_used = analysis["gas"]
-    if current_gas_used > global_params.GAS_LIMIT:
-        log.debug("Run out of gas. Terminating this path ... ")
-        return stack
-
-    # Execute every instruction, one at a time
-    try:
-        block_ins = vertices[block].get_instructions()
-    except KeyError:
-        log.debug("This path results in an exception, possibly an invalid jump address")
-        return ["ERROR"]
-    print("---------------------------")
-    print("Edge : ", current_edge)
-    print("jumptype : ", jump_type[block])
-    print("func_name : ", current_func_name)
-    for instr in block_ins:
-        print("     instr : ", instr)
-        sym_exec_ins(params, block, instr, func_call, current_func_name)
-        # print("     after stack :", stack)
-        # print("     after solver : ", solver)
-    print("---------------------------")
-    # Mark that this basic block in the visited blocks
-    visited.append(block)
-    depth += 1
-
-    reentrancy_all_paths.append(analysis["reentrancy_bug"])
-    if analysis["money_flow"] not in money_flow_all_paths:
-        global_problematic_pcs["money_concurrency_bug"].append(analysis["money_concurrency_bug"])
-        money_flow_all_paths.append(analysis["money_flow"])
-        path_conditions.append(path_conditions_and_vars["path_condition"])
-        global_problematic_pcs["time_dependency_bug"].append(analysis["time_dependency_bug"])
-        all_gs.append(copy_global_values(global_state))
-
-    # Go to next Basic Block(s)
-    if jump_type[block] == "terminal" or depth > global_params.DEPTH_LIMIT:
-        global total_no_of_paths
-        global no_of_test_cases
-
-        total_no_of_paths += 1
-
-        if global_params.GENERATE_TEST_CASES:
-            try:
-                model = solver.model()
-                no_of_test_cases += 1
-                filename = "test%s.otest" % no_of_test_cases
-                with open(filename, 'w') as f:
-                    for variable in model.decls():
-                        f.write(str(variable) + " = " + str(model[variable]) + "\n")
-                if os.stat(filename).st_size == 0:
-                    os.remove(filename)
-                    no_of_test_cases -= 1
-            except Exception as e:
-                pass
-
-        log.debug("TERMINATING A PATH ...")
-        display_analysis(analysis)
-        if is_testing_evm():
-            compare_storage_and_gas_unit_test(global_state, analysis)
-
-    elif jump_type[block] == "unconditional":  # executing "JUMP"
-        successor = vertices[block].get_jump_target()
-        new_params = params.copy()
-        new_params.global_state["pc"] = successor
-        if g_src_map:
-            source_code = g_src_map.get_source_code(global_state['pc'])
-            if source_code in g_src_map.func_call_names:
-                func_call = global_state['pc']
-        sym_exec_block(new_params, successor, block, depth, func_call, current_func_name)
-
-    elif jump_type[block] == "falls_to":  # just follow to the next basic block
-        successor = vertices[block].get_falls_to()
-        new_params = params.copy()
-        new_params.global_state["pc"] = successor
-        sym_exec_block(new_params, successor, block, depth, func_call, current_func_name)
-
-    elif jump_type[block] == "conditional":  # executing "JUMPI"
-
-        # A choice point, we proceed with depth first search
-
-        branch_expression = vertices[block].get_branch_expression()
-        log.debug("Branch expression: " + str(branch_expression))
-        solver.push()  # SET A BOUNDARY FOR SOLVER
-        solver.add(branch_expression)
-        try:
-            if solver.check() == unsat:
-                log.debug("INFEASIBLE PATH DETECTED")
-            else:
-                left_branch = vertices[block].get_jump_target()
-                new_params = params.copy()
-                new_params.global_state["pc"] = left_branch
-                new_params.path_conditions_and_vars["path_condition"].append(branch_expression)
-                last_idx = len(new_params.path_conditions_and_vars["path_condition"]) - 1
-                new_params.analysis["time_dependency_bug"][last_idx] = global_state["pc"]
-                sym_exec_block(new_params, left_branch, block, depth, func_call, current_func_name)
-        except TimeoutError:
-            raise
-        except Exception as e:
-            if global_params.DEBUG_MODE:
-                traceback.print_exc()
-
-        solver.pop()  # POP SOLVER CONTEXT
-        solver.push()  # SET A BOUNDARY FOR SOLVER
-        negated_branch_expression = Not(branch_expression)
-        solver.add(negated_branch_expression)
-
-        log.debug("Negated branch expression: " + str(negated_branch_expression))
-
-        try:
-            if solver.check() == unsat:
-                # Note that this check can be optimized. I.e. if the previous check succeeds,
-                # no need to check for the negated condition, but we can immediately go into
-                # the else branch
-                log.debug("INFEASIBLE PATH DETECTED")
-            else:
-                right_branch = vertices[block].get_falls_to()
-                new_params = params.copy()
-                new_params.global_state["pc"] = right_branch
-                new_params.path_conditions_and_vars["path_condition"].append(negated_branch_expression)
-                last_idx = len(new_params.path_conditions_and_vars["path_condition"]) - 1
-                new_params.analysis["time_dependency_bug"][last_idx] = global_state["pc"]
-                sym_exec_block(new_params, right_branch, block, depth, func_call, current_func_name)
-        except TimeoutError:
-            raise
-        except Exception as e:
-            if global_params.DEBUG_MODE:
-                traceback.print_exc()
-
-        solver.pop()  # POP SOLVER CONTEXT
-        updated_count_number = visited_edges[current_edge] - 1
-        visited_edges.update({current_edge: updated_count_number})
-
-    else:
-        updated_count_number = visited_edges[current_edge] - 1
-        visited_edges.update({current_edge: updated_count_number})
-        raise Exception('Unknown Jump-Type')
-
-
-# Symbolically executing an instruction
-
-def sym_exec_ins(params, block, instr, func_call, current_func_name):
+def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
+    global call_count
     global MSIZE
     global visited_pcs
     global solver
@@ -749,6 +596,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     global g_src_map
     global calls_affect_state
     global data_source
+    global last_opcode
 
     stack = params.stack
     mem = params.mem
@@ -763,6 +611,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
 
     instr_parts = str.split(instr, ' ')
     opcode = instr_parts[0]
+    last_opcode = opcode
 
     if opcode == "INVALID":
         return
@@ -1255,7 +1104,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             global_state["pc"] = global_state["pc"] + 1
             first = stack.pop(0)
             second = stack.pop(0)
-
             computed = first | second
             computed = simplify(computed) if is_expr(computed) else computed
             stack.insert(0, computed)
@@ -1373,13 +1221,15 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "CALLER":  # get caller address
         # that is directly responsible for this execution
         global_state["pc"] = global_state["pc"] + 1
-        stack.insert(0, global_state["sender_address"])
+        #stack.insert(0, global_state["sender_address"])
+        stack.insert(0, int(user.get_address(), 16))
     elif opcode == "ORIGIN":  # get execution origination address
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["origin"])
     elif opcode == "CALLVALUE":  # get value of this transaction
         global_state["pc"] = global_state["pc"] + 1
-        stack.insert(0, global_state["value"])
+        # stack.insert(0, global_state["value"])
+        stack.insert(0, user.get_last_deposit())
     elif opcode == "CALLDATALOAD":  # from input data from environment
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
@@ -1387,20 +1237,21 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             if g_src_map:
                 source_code = g_src_map.get_source_code(global_state['pc'] - 1)
                 if source_code.startswith("function") and isReal(position) and current_func_name in g_src_map.func_name_to_params:
-                    params =  g_src_map.func_name_to_params[current_func_name]
+                    params = g_src_map.func_name_to_params[current_func_name]
                     param_idx = (position - 4) // 32
                     for param in params:
                         if param_idx == param['position']:
-                            new_var_name = param['name']
+                            new_var_name = param['name'] + str(exec_count)
                             g_src_map.var_names.append(new_var_name)
                 else:
-                    new_var_name = gen.gen_data_var(position)
+                    new_var_name = gen.gen_data_var(position) + str(exec_count)
             else:
-                new_var_name = gen.gen_data_var(position)
+                new_var_name = gen.gen_data_var(position) + str(exec_count)
+
             if new_var_name in path_conditions_and_vars:
                 new_var = path_conditions_and_vars[new_var_name]
             else:
-                new_var = BitVec(new_var_name, 256)
+                new_var = BitVec(new_var_name + str(exec_count), 256)
                 path_conditions_and_vars[new_var_name] = new_var
             stack.insert(0, new_var)
         else:
@@ -1885,6 +1736,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "CALL":
         # TODO: Need to handle miu_i
         if len(stack) > 6:
+            call_count += 1
             calls.append(global_state["pc"])
             for call_pc in calls:
                 if call_pc not in calls_affect_state:
@@ -1900,6 +1752,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             # in the paper, it is shaky when the size of data output is
             # min of stack[6] and the | o |
 
+            user.add_withdraw(transfer_amount)
             if isReal(transfer_amount):
                 if transfer_amount == 0:
                     stack.insert(0, 1)   # x = 0
@@ -2032,6 +1885,8 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
             if opcode == "REVERT":
                 revertible_overflow_pcs.update(overflow_pcs)
                 global_state["pc"] = global_state["pc"] + 1
+                user.rollback_deposits()
+                user.rollback_withdraws(call_count)
             stack.pop(0)
             stack.pop(0)
             # TODO
@@ -2061,9 +1916,9 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name):
     elif opcode == "SHR":
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
-            x = stack.pop(0)
-            y = stack.pop(0)
-            stack.insert(0, y>>x)
+            shift = stack.pop(0)
+            data = stack.pop(0)
+            stack.insert(0, data >> shift)
 
         else:
             raise ValueError('STACK underflow')
@@ -2462,9 +2317,425 @@ def analyze():
 
     run_build_cfg_and_analyze(timeout_cb=timeout_cb)
 
+def gen_rand_addr():
 
-def get_address():
+    global addr_dic
 
+    addr = random.randrange(1,2**160-1)
+    addr = hex(addr)
+
+    while (addr in addr_dic):
+        addr = random.randrange(0, 2 ** 160 - 1)
+        addr = hex(addr)
+
+    addr_dic.insert(len(addr_dic), addr)
+
+    return addr
+
+global users
+users = []
+
+def gen_user(address):
+    return User(address)
+
+def gen_users(user_num):
+
+    for i in range(0, user_num):
+        address = gen_rand_addr()
+        users.append(gen_user(address))
+
+def get_rand_user():
+
+    idx = random.randrange(0, len(users))
+    return users[idx]
+
+def get_rand_funcsig(start_block_to_func_sig):
+
+    idx = random.randrange(0, len(start_block_to_func_sig))
+    func_sigs = start_block_to_func_sig.values()
+    func_sigs_list = list(func_sigs)
+
+    return func_sigs_list[idx]
+
+def get_value_name():
+
+    tmp = "in"+str(len(dep_his_all)+1)
+
+    return tmp
+
+global dep_his_all
+dep_his_all = []
+
+global with_his_all
+with_his_all = []
+
+def partial_initGlobalVars():
+    global g_src_map
+    global solver
+    # # Z3 solver
+    #
+    if global_params.PARALLEL:
+        t2 = Then('simplify', 'solve-eqs', 'smt')
+        _t = Then('tseitin-cnf-core', 'split-clause')
+        t1 = ParThen(_t, t2)
+        solver = OrElse(t1, t2).solver()
+    else:
+        solver = Solver()
+
+    solver.set("timeout", global_params.TIMEOUT)
+    #
+    # global MSIZE
+    # MSIZE = False
+    #
+    # global revertible_overflow_pcs
+    # revertible_overflow_pcs = set()
+    #
+    # global g_disasm_file
+    # with open(g_disasm_file, 'r') as f:
+    #     disasm = f.read()
+    #
+    # if 'MSIZE' in disasm:
+    #     MSIZE = True
+    #
+    # global g_timeout
+    # g_timeout = False
+    #
+    # global visited_pcs
+    # visited_pcs = set()
+    #
+    # global results
+    # if g_src_map:
+    #     # global start_block_to_func_sig
+    #     # start_block_to_func_sig = {}
+    #
+    #     results = {
+    #         'evm_code_coverage': '',
+    #         'vulnerabilities': {
+    #             'integer_underflow': [],
+    #             'integer_overflow': [],
+    #             'callstack': [],
+    #             'money_concurrency': [],
+    #             'time_dependency': [],
+    #             'reentrancy': [],
+    #             'assertion_failure': [],
+    #             'parity_multisig_bug_2': [],
+    #         }
+    #     }
+    # else:
+    #     results = {
+    #         'evm_code_coverage': '',
+    #         'vulnerabilities': {
+    #             'integer_underflow': [],
+    #             'integer_overflow': [],
+    #             'callstack': False,
+    #             'money_concurrency': False,
+    #             'time_dependency': False,
+    #             'reentrancy': False,
+    #         }
+    #     }
+
+    # global calls_affect_state
+    # calls_affect_state = {}
+
+    # capturing the last statement of each basic block
+    # global end_ins_dict
+    # end_ins_dict = {}
+    #
+    # # capturing all the instructions, keys are corresponding addresses
+    # global instructions
+    # instructions = {}
+
+    # capturing the "jump type" of each basic block
+    # global jump_type
+    # jump_type = {}
+    #
+    # global vertices
+    # vertices = {}
+    #
+    # global edges
+    # edges = {}
+
+    global visited_edges
+    visited_edges = {}
+
+    # global money_flow_all_paths
+    # money_flow_all_paths = []
+    #
+    # global reentrancy_all_paths
+    # reentrancy_all_paths = []
+
+    # # store the path condition corresponding to each path in money_flow_all_paths
+    # global path_conditions
+    # path_conditions = []
+    #
+    # global global_problematic_pcs
+    # global_problematic_pcs = {"money_concurrency_bug": [], "reentrancy_bug": [], "time_dependency_bug": [], "assertion_failure": [], "integer_underflow": [], "integer_overflow": []}
+    #
+    # # store global variables, e.g. storage, balance of all paths
+    # global all_gs
+    # all_gs = []
+    #
+    # global total_no_of_paths
+    # total_no_of_paths = 0
+    #
+    # global no_of_test_cases
+    # no_of_test_cases = 0
+    #
+    # # to generate names for symbolic variables
+    # global gen
+    # gen = Generator()
+    #
+    # global data_source
+    # if global_params.USE_GLOBAL_BLOCKCHAIN:
+    #     data_source = EthereumData()
+    #
+    # global rfile
+    # if global_params.REPORT_MODE:
+    #     rfile = open(g_disasm_file + '.report', 'w')
+
+def full_sym_exec_1():
+    # executing, starting from beginning
+    global exec_count
+    global call_count
+    global last_opcode
+    global end_ins_dict
+
+    my_solver = Solver()
+
+    if g_src_map:
+        start_block_to_func_sig = get_start_block_to_func_sig()
+        print(start_block_to_func_sig)
+
+    gen_users(5)
+
+    for i in range(1, 501):
+
+        call_count = 0
+        exec_count = i
+        last_opcode = ""
+        print("<<<<<<<<<<<< ", i, "th execution >>>>>>>>>>>>")
+        partial_initGlobalVars()
+        path_conditions_and_vars = {"path_condition": []}
+        global_state = get_init_global_state(path_conditions_and_vars)
+        analysis = init_analysis()
+        params = Parameter(path_conditions_and_vars=path_conditions_and_vars, global_state=global_state,
+                           analysis=analysis)
+
+        user = get_rand_user()
+        idx = len(dep_his_all)
+        dep_his_all.append(BitVec(get_value_name(), 256))
+        tmp = dep_his_all[idx]
+        user.add_deposit(tmp)
+        sym_exec_single_path(params, 0, 0, 0, -1, 'fallback', user)
+        with_idx = len(user.get_withdraws())
+        if with_idx >= 1:
+            my_solver.push()
+            my_solver.add(user.get_deposits_sum() > user.get_withdraws()[with_idx - 1], user.get_withdraws_sum() > user.get_deposits_sum())
+            if my_solver.check() == sat:
+                print("there is some problem of ether flow at : \n", my_solver.model())
+                my_solver.pop()
+                return
+            else:
+                my_solver.pop()
+
+        print(user.get_deposits(), user.get_withdraws())
+
+# Symbolically executing an instruction
+
+# revert 나 stop 까지 하나의 패스를 실행
+def sym_exec_single_path(params, block, pre_block, depth, func_call, current_func_name, user):
+    global solver
+    global visited_edges
+    global money_flow_all_paths
+    global path_conditions
+    global global_problematic_pcs
+    global all_gs
+    global results
+    global g_src_map
+    visited = params.visited
+    stack = params.stack
+    mem = params.mem
+    memory = params.memory
+    global_state = params.global_state
+    sha3_list = params.sha3_list
+    path_conditions_and_vars = params.path_conditions_and_vars
+    analysis = params.analysis
+    calls = params.calls
+    overflow_pcs = params.overflow_pcs
+    Edge = namedtuple("Edge", ["v1", "v2"]) # Factory Function for tuples is used as dictionary key
+    if block < 0:
+        print("UNKNOWN JUMP ADDRESS. TERMINATING THIS PATH")
+        log.debug("UNKNOWN JUMP ADDRESS. TERMINATING THIS PATH")
+        return ["ERROR"]
+
+    log.debug("Reach block address %d \n", block)
+
+    if g_src_map:
+        if block in start_block_to_func_sig:
+            func_sig = start_block_to_func_sig[block]
+            current_func_name = g_src_map.sig_to_func[func_sig]
+            pattern = r'(\w[\w\d_]*)\((.*)\)$'
+            match = re.match(pattern, current_func_name)
+            if match:
+                current_func_name =  list(match.groups())[0]
+
+    current_edge = Edge(pre_block, block)
+
+    if current_edge in visited_edges:
+        updated_count_number = visited_edges[current_edge] + 1
+        visited_edges.update({current_edge: updated_count_number})
+    else:
+        visited_edges.update({current_edge: 1})
+
+    if visited_edges[current_edge] > global_params.LOOP_LIMIT:
+        print("Overcome a number of loop limit. Terminating this path ...")
+        log.debug("Overcome a number of loop limit. Terminating this path ...")
+        return stack
+
+    current_gas_used = analysis["gas"]
+    if current_gas_used > global_params.GAS_LIMIT:
+        print("Run out of gas. Terminating this path ... ")
+        log.debug("Run out of gas. Terminating this path ... ")
+        return stack
+
+    # Execute every instruction, one at a time
+    try:
+        block_ins = vertices[block].get_instructions()
+    except KeyError:
+        log.debug("This path results in an exception, possibly an invalid jump address")
+        return ["ERROR"]
+    print("---------------------------")
+    print("Edge : ", current_edge)
+    print("jumptype : ", jump_type[block])
+    print("func_name : ", current_func_name)
+    for instr in block_ins:
+        print("     instr : ", instr)
+        sym_exec_ins(params, block, instr, func_call, current_func_name, user)
+        # print("     after stack :", stack)
+        # print("     after solver : ", solver)
+    print("---------------------------")
+    # Mark that this basic block in the visited blocks
+    visited.append(block)
+    depth += 1
+
+    reentrancy_all_paths.append(analysis["reentrancy_bug"])
+    if analysis["money_flow"] not in money_flow_all_paths:
+        global_problematic_pcs["money_concurrency_bug"].append(analysis["money_concurrency_bug"])
+        money_flow_all_paths.append(analysis["money_flow"])
+        path_conditions.append(path_conditions_and_vars["path_condition"])
+        global_problematic_pcs["time_dependency_bug"].append(analysis["time_dependency_bug"])
+        all_gs.append(copy_global_values(global_state))
+
+    # Go to next Basic Block(s)
+    if jump_type[block] == "terminal" or depth > global_params.DEPTH_LIMIT:
+        global total_no_of_paths
+        global no_of_test_cases
+
+        total_no_of_paths += 1
+
+        if global_params.GENERATE_TEST_CASES:
+            try:
+                model = solver.model()
+                no_of_test_cases += 1
+                filename = "test%s.otest" % no_of_test_cases
+                with open(filename, 'w') as f:
+                    for variable in model.decls():
+                        f.write(str(variable) + " = " + str(model[variable]) + "\n")
+                if os.stat(filename).st_size == 0:
+                    os.remove(filename)
+                    no_of_test_cases -= 1
+            except Exception as e:
+                pass
+
+        log.debug("TERMINATING A PATH ...")
+        display_analysis(analysis)
+        if is_testing_evm():
+            compare_storage_and_gas_unit_test(global_state, analysis)
+
+    elif jump_type[block] == "unconditional":  # executing "JUMP"
+        successor = vertices[block].get_jump_target()
+        new_params = params.copy()
+        new_params.global_state["pc"] = successor
+        if g_src_map:
+            source_code = g_src_map.get_source_code(global_state['pc'])
+            if source_code in g_src_map.func_call_names:
+                func_call = global_state['pc']
+        sym_exec_single_path(new_params, successor, block, depth, func_call, current_func_name, user)
+
+    elif jump_type[block] == "falls_to":  # just follow to the next basic block
+        successor = vertices[block].get_falls_to()
+        new_params = params.copy()
+        new_params.global_state["pc"] = successor
+        sym_exec_single_path(new_params, successor, block, depth, func_call, current_func_name, user)
+
+    elif jump_type[block] == "conditional":  # executing "JUMPI"
+
+        # A choice point, we proceed with depth first search
+        tmp1 = random.randrange(0,2)
+
+        branch_expression = vertices[block].get_branch_expression()
+        log.debug("Branch expression: " + str(branch_expression))
+        
+        if tmp1 == 0:
+            solver.push()  # SET A BOUNDARY FOR SOLVER
+            solver.add(branch_expression)
+            try:
+                if solver.check() == unsat:
+                    log.debug("INFEASIBLE PATH DETECTED")
+                else:
+                    print("positive branch")
+                    left_branch = vertices[block].get_jump_target()
+                    new_params = params.copy()
+                    new_params.global_state["pc"] = left_branch
+                    new_params.path_conditions_and_vars["path_condition"].append(branch_expression)
+                    last_idx = len(new_params.path_conditions_and_vars["path_condition"]) - 1
+                    new_params.analysis["time_dependency_bug"][last_idx] = global_state["pc"]
+                    sym_exec_single_path(new_params, left_branch, block, depth, func_call, current_func_name, user)
+
+            except TimeoutError:
+                raise
+            except Exception as e:
+                if global_params.DEBUG_MODE:
+                    traceback.print_exc()
+
+            solver.pop()  # POP SOLVER CONTEXT
+
+        else :
+            solver.push()  # SET A BOUNDARY FOR SOLVER
+            negated_branch_expression = Not(branch_expression)
+            solver.add(negated_branch_expression)
+
+            log.debug("Negated branch expression: " + str(negated_branch_expression))
+
+            try:
+                if solver.check() == unsat:
+                    # Note that this check can be optimized. I.e. if the previous check succeeds,
+                    # no need to check for the negated condition, but we can immediately go into
+                    # the else branch
+                    log.debug("INFEASIBLE PATH DETECTED")
+                else:
+                    print("negative branch")
+                    right_branch = vertices[block].get_falls_to()
+                    new_params = params.copy()
+                    new_params.global_state["pc"] = right_branch
+                    new_params.path_conditions_and_vars["path_condition"].append(negated_branch_expression)
+                    last_idx = len(new_params.path_conditions_and_vars["path_condition"]) - 1
+                    new_params.analysis["time_dependency_bug"][last_idx] = global_state["pc"]
+                    sym_exec_single_path(new_params, right_branch, block, depth, func_call, current_func_name, user)
+            except TimeoutError:
+                raise
+            except Exception as e:
+                if global_params.DEBUG_MODE:
+                    traceback.print_exc()
+            solver.pop()  # POP SOLVER CONTEXT
+
+        updated_count_number = visited_edges[current_edge] - 1
+        visited_edges.update({current_edge: updated_count_number})
+
+    else:
+        updated_count_number = visited_edges[current_edge] - 1
+        visited_edges.update({current_edge: updated_count_number})
+        raise Exception('Unknown Jump-Type')
 
 def run(disasm_file=None, source_file=None, source_map=None):
     global g_disasm_file

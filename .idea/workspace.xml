@@ -3,14 +3,21 @@
   <component name="ChangeListManager">
     <list default="true" id="cbfbfc2b-f1b6-4cba-8940-fa9caf024ab8" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/oyente/oyente.py" beforeDir="false" afterPath="$PROJECT_DIR$/oyente/oyente.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/oyente/disam.txt" beforeDir="false" afterPath="$PROJECT_DIR$/oyente/disam.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/oyente/disam_m.txt" beforeDir="false" afterPath="$PROJECT_DIR$/oyente/disam_m.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/oyente/evm.txt" beforeDir="false" afterPath="$PROJECT_DIR$/oyente/evm.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/oyente/symExec.py" beforeDir="false" afterPath="$PROJECT_DIR$/oyente/symExec.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/oyente/test_evm/evm_unit_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/oyente/test_evm/evm_unit_test.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/oyente$oyente.coverage" NAME="oyente Coverage Results" MODIFIED="1553176831707" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/oyente" />
+    <SUITE FILE_PATH="coverage/oyente$symExec.coverage" NAME="symExec Coverage Results" MODIFIED="1553161568037" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/oyente" />
   </component>
   <component name="FUSProjectUsageTrigger">
     <session id="273121678">
@@ -25,7 +32,7 @@
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="8" />
+          <entry key="py" value="9" />
           <entry key="pyi" value="1" />
           <entry key="txt" value="1" />
         </counts>
@@ -33,29 +40,89 @@
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="PLAIN_TEXT" value="1" />
-          <entry key="Python" value="8" />
+          <entry key="Python" value="9" />
           <entry key="PythonStub" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="185" />
+          <entry key="py" value="191" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="185" />
+          <entry key="Python" value="191" />
+        </counts>
+      </usages-collector>
+    </session>
+    <session id="1582265450">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="3" />
+          <entry key="project.open.time.10" value="1" />
+          <entry key="project.open.time.2" value="1" />
+          <entry key="project.open.time.8" value="1" />
+          <entry key="project.opened" value="3" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.edit">
+        <counts>
+          <entry key="dummy" value="10" />
+          <entry key="py" value="3098" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.edit">
+        <counts>
+          <entry key="PLAIN_TEXT" value="10" />
+          <entry key="Python" value="3098" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.extensions.open">
+        <counts>
+          <entry key="json" value="1" />
+          <entry key="py" value="17" />
+          <entry key="txt" value="6" />
+        </counts>
+      </usages-collector>
+      <usages-collector id="statistics.file.types.open">
+        <counts>
+          <entry key="JSON" value="1" />
+          <entry key="PLAIN_TEXT" value="6" />
+          <entry key="Python" value="17" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/oyente/symExec.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="376">
+              <caret line="2454" column="8" selection-start-line="2454" selection-start-column="8" selection-end-line="2454" selection-end-column="8" />
+              <folding>
+                <marker date="1553181302141" expanded="true" signature="977:979" ph="..." />
+                <marker date="1553181302141" expanded="true" signature="88179:89153" ph="..." />
+                <marker date="1553181302141" expanded="true" signature="88179:97261" ph="..." />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/Cellar/python/3.7.2_2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/random.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="202">
+              <caret line="199" selection-start-line="199" selection-end-line="199" />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/oyente/oyente.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="90">
-              <caret line="17" column="74" selection-start-line="17" selection-start-column="74" selection-end-line="17" selection-end-column="74" />
+            <state relative-caret-position="406">
+              <caret line="215" selection-start-line="215" selection-end-line="215" />
               <folding>
                 <element signature="e#23#32#0" expanded="true" />
               </folding>
@@ -64,56 +131,42 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file:///usr/local/Cellar/python/3.7.2_2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/logging/__init__.py">
+        <entry file="file://$PROJECT_DIR$/oyente/vargenerator.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="642">
-              <caret line="1024" selection-start-line="1024" selection-end-line="1024" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/oyente/symExec.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-10120">
-              <caret line="451" column="8" selection-start-line="451" selection-start-column="8" selection-end-line="451" selection-end-column="8" />
-              <folding>
-                <element signature="e#0#15#0" expanded="true" />
-                <marker date="1552801252503" expanded="true" signature="96034:96037" ph="..." />
-              </folding>
+            <state relative-caret-position="210">
+              <caret line="14" column="35" selection-start-line="14" selection-start-column="27" selection-end-line="14" selection-end-column="35" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/misc_utils/get_source.py">
+        <entry file="file://$PROJECT_DIR$/oyente/disam.txt">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <folding>
-                <element signature="e#0#17#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="-1245">
+              <caret line="14" column="11" lean-forward="true" selection-start-line="14" selection-start-column="11" selection-end-line="14" selection-end-column="11" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/misc_utils/stats-collect.py">
+        <entry file="file://$PROJECT_DIR$/oyente/ethereum_data.py">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/oyente/source_map.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <folding>
-                <element signature="e#0#24#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="2670">
+              <caret line="186" column="76" selection-start-line="186" selection-start-column="76" selection-end-line="186" selection-end-column="76" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/misc_utils/transaction_scrape.py">
+        <entry file="file://$PROJECT_DIR$/oyente/state.json">
           <provider selected="true" editor-type-id="text-editor">
-            <state>
-              <folding>
-                <element signature="e#0#11#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="285">
+              <caret line="19" column="5" selection-start-line="19" selection-start-column="3" selection-end-line="19" selection-end-column="5" />
             </state>
           </provider>
         </entry>
@@ -125,32 +178,47 @@
       </file>
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/oyente/disam_m.txt">
-          <provider selected="true" editor-type-id="text-editor" />
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/oyente/opcodes.py">
-          <provider selected="true" editor-type-id="text-editor" />
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="356">
+              <caret line="58" column="8" lean-forward="true" selection-start-line="58" selection-start-column="8" selection-end-line="58" selection-end-column="8" />
+            </state>
+          </provider>
         </entry>
       </file>
     </leaf>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Z3_mk_array_sort_n</find>
-      <find>z3 is n</find>
-      <find>unknown instruction</find>
-      <find>six</find>
-      <find>inst</find>
-      <find>untested</find>
-      <find>&quot;PUSH&quot;</find>
-      <find>&quot;DIV&quot;</find>
-      <find>============ Results ===========</find>
-      <find>address</find>
       <find>get address</find>
-      <find>Ia</find>
-      <find>path_conditions_and_vars[&quot;Ia&quot;]</find>
-      <find>deposited_value</find>
+      <find>&quot;is&quot;</find>
+      <find>full_sym_exec</find>
+      <find>sha256</find>
+      <find>address</find>
+      <find>receiver_address</find>
+      <find>disam_m</find>
+      <find>path</find>
+      <find>ia</find>
+      <find>collect</find>
+      <find>start_block_to_func_sig</find>
+      <find>sha3_list</find>
+      <find>full_</find>
+      <find>full</find>
+      <find>get_address</find>
+      <find>gen_address</find>
+      <find>Call</find>
+      <find>returndata</find>
+      <find>sender</find>
+      <find>$USER_HOME$/Documents/solTest</find>
+      <find>&quot;CALLER&quot;</find>
+      <find>push4</find>
+      <find>global</find>
+      <find>gen_</find>
+      <find>addr_</find>
+      <find>global addr</find>
+      <find>gen_user</find>
+      <find>start_block_to_func_sig = {}</find>
+      <find>calldatasize</find>
+      <find>calldataload</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -160,6 +228,9 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/oyente/oyente.py" />
+        <option value="$PROJECT_DIR$/oyente/test_evm/evm_unit_test.py" />
+        <option value="$PROJECT_DIR$/oyente/symExec_m.py" />
+        <option value="$PROJECT_DIR$/oyente/symExec_origin.py" />
         <option value="$PROJECT_DIR$/oyente/symExec.py" />
       </list>
     </option>
@@ -175,10 +246,11 @@
       <path value="$PROJECT_DIR$/web/package.json" />
     </packageJsonPaths>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="480" />
     <option name="y" value="23" />
-    <option name="width" value="1440" />
-    <option name="height" value="811" />
+    <option name="width" value="960" />
+    <option name="height" value="823" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -196,12 +268,16 @@
             <path>
               <item name="oyente" type="b2602c69:ProjectViewProjectNode" />
               <item name="oyente" type="462c0819:PsiDirectoryNode" />
-              <item name="misc_utils" type="462c0819:PsiDirectoryNode" />
+              <item name="oyente" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="oyente" type="b2602c69:ProjectViewProjectNode" />
-              <item name="oyente" type="462c0819:PsiDirectoryNode" />
-              <item name="oyente" type="462c0819:PsiDirectoryNode" />
+              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
+            </path>
+            <path>
+              <item name="oyente" type="b2602c69:ProjectViewProjectNode" />
+              <item name="External Libraries" type="cb654da1:ExternalLibrariesNode" />
+              <item name="&lt; Python 3.7 &gt;" type="70bed36:NamedLibraryElementNode" />
             </path>
           </expand>
           <select />
@@ -214,7 +290,12 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.project" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/oyente" />
+    </key>
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -227,6 +308,62 @@
         </RuleState>
       </list>
     </option>
+  </component>
+  <component name="RunManager" selected="Python.oyente">
+    <configuration name="oyente" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="oyente" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/oyente" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/oyente/oyente.py" />
+      <option name="PARAMETERS" value="-s $USER_HOME$/Documents/solTest/test2/test2_solidity.sol" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="symExec" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="oyente" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/oyente" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/oyente/symExec.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.symExec" />
+      <item itemvalue="Python.oyente" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.oyente" />
+        <item itemvalue="Python.symExec" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -242,11 +379,11 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1440" height="811" extended-state="0" />
+    <frame x="0" y="34" width="1440" height="814" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info id="Favorites" order="0" side_tool="true" />
-      <window_info active="true" content_ui="combo" id="Project" order="1" visible="true" weight="0.26037195" />
+      <window_info content_ui="combo" id="Project" order="1" visible="true" weight="0.22317597" />
       <window_info id="Structure" order="2" side_tool="true" weight="0.25" />
       <window_info anchor="bottom" id="Database Changes" order="0" show_stripe_button="false" />
       <window_info anchor="bottom" id="Terminal" order="1" />
@@ -255,8 +392,8 @@
       <window_info anchor="bottom" id="Python Console" order="4" />
       <window_info anchor="bottom" id="Docker" order="5" show_stripe_button="false" />
       <window_info anchor="bottom" id="Message" order="6" />
-      <window_info anchor="bottom" id="Find" order="7" />
-      <window_info anchor="bottom" id="Run" order="8" />
+      <window_info anchor="bottom" id="Find" order="7" weight="0.32962447" />
+      <window_info anchor="bottom" id="Run" order="8" weight="0.44044322" />
       <window_info anchor="bottom" id="Debug" order="9" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="10" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="11" weight="0.4" />
@@ -282,6 +419,11 @@
           <line>2</line>
           <option name="timeStamp" value="1" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/oyente/symExec.py</url>
+          <line>52</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>
@@ -290,72 +432,128 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1369">
           <caret line="6" column="29" selection-start-line="6" selection-start-column="25" selection-end-line="6" selection-end-column="29" />
-          <folding>
-            <element signature="e#0#21#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/oyente/oyente.py">
+    <entry file="file:///usr/local/Cellar/python/3.7.2_2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/logging/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="90">
-          <caret line="17" column="74" selection-start-line="17" selection-start-column="74" selection-end-line="17" selection-end-column="74" />
-          <folding>
-            <element signature="e#23#32#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="15330">
+          <caret line="1024" selection-start-line="1024" selection-end-line="1024" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/misc_utils/get_source.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/misc_utils/stats-collect.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#24#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
+      <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/misc_utils/transaction_scrape.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/opcodes.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/disam_m1.txt" />
+    <entry file="file://$PROJECT_DIR$/misc_utils/stats-collect.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/disam1.txt" />
+    <entry file="file://$PROJECT_DIR$/oyente/global_params.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/execflow1.txt" />
+    <entry file="file://$PROJECT_DIR$/oyente/execflow2.txt" />
+    <entry file="file://$PROJECT_DIR$/oyente/utils.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/test_evm/evm_unit_test.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
+        <state relative-caret-position="555">
+          <caret line="44" column="16" selection-start-line="44" selection-start-column="16" selection-end-line="44" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/input_helper.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="975">
+          <caret line="74" column="37" selection-start-line="74" selection-start-column="37" selection-end-line="74" selection-end-column="37" />
           <folding>
-            <element signature="e#0#11#0" expanded="true" />
+            <element signature="e#0#12#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/source_map.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2670">
+          <caret line="186" column="76" selection-start-line="186" selection-start-column="76" selection-end-line="186" selection-end-column="76" />
         </state>
       </provider>
     </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/typeshed/third_party/3/six/__init__.pyi">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
-    <entry file="file://$PROJECT_DIR$/oyente/disam_m.txt">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/oyente/opcodes.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file:///usr/local/Cellar/python/3.7.2_2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/logging/__init__.py">
+    <entry file="file://$PROJECT_DIR$/oyente/disam.txt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="642">
-          <caret line="1024" selection-start-line="1024" selection-end-line="1024" />
+        <state relative-caret-position="-1245">
+          <caret line="14" column="11" lean-forward="true" selection-start-line="14" selection-start-column="11" selection-end-line="14" selection-end-column="11" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/symExec_origin.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="195">
+          <caret line="178" column="19" lean-forward="true" selection-start-line="178" selection-start-column="19" selection-end-line="178" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/oyente.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="406">
+          <caret line="215" selection-start-line="215" selection-end-line="215" />
+          <folding>
+            <element signature="e#23#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/Cellar/python/3.7.2_2/Frameworks/Python.framework/Versions/3.7/lib/python3.7/random.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="202">
+          <caret line="199" selection-start-line="199" selection-end-line="199" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/state.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="285">
+          <caret line="19" column="5" selection-start-line="19" selection-start-column="3" selection-end-line="19" selection-end-column="5" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/disam_m.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="356">
+          <caret line="58" column="8" lean-forward="true" selection-start-line="58" selection-start-column="8" selection-end-line="58" selection-end-column="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/ethereum_data.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/oyente/vargenerator.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="210">
+          <caret line="14" column="35" selection-start-line="14" selection-start-column="27" selection-end-line="14" selection-end-column="35" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/oyente/symExec.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-10120">
-          <caret line="451" column="8" selection-start-line="451" selection-start-column="8" selection-end-line="451" selection-end-column="8" />
+        <state relative-caret-position="376">
+          <caret line="2454" column="8" selection-start-line="2454" selection-start-column="8" selection-end-line="2454" selection-end-column="8" />
           <folding>
-            <element signature="e#0#15#0" expanded="true" />
-            <marker date="1552801252503" expanded="true" signature="96034:96037" ph="..." />
+            <marker date="1553181302141" expanded="true" signature="977:979" ph="..." />
+            <marker date="1553181302141" expanded="true" signature="88179:89153" ph="..." />
+            <marker date="1553181302141" expanded="true" signature="88179:97261" ph="..." />
           </folding>
         </state>
       </provider>
