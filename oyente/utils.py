@@ -14,6 +14,7 @@ import difflib
 import six
 from z3 import *
 from z3.z3util import get_vars
+import log
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -53,6 +54,7 @@ def check_sat(solver, pop_if_exception=True):
     try:
         ret = solver.check()
         if ret == unknown:
+            print(solver)
             raise Z3Exception(solver.reason_unknown())
     except Exception as e:
         if pop_if_exception:

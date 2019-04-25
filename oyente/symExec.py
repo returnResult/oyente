@@ -32,33 +32,46 @@ Assertion = namedtuple('Assertion', ['pc', 'model'])
 Underflow = namedtuple('Underflow', ['pc', 'model'])
 Overflow = namedtuple('Overflow', ['pc', 'model'])
 
-global addr_dic
-addr_dic = []
+global addr_list
+addr_list = []
 
 class User:
 
-    def __init__(self, address):
+    def __init__(self, address, mal = False):
         self.addr = address
         self.deposits = []
         self.withdraws = []
         self.deposits_sum = 0
         self.withdraws_sum = 0
+        self.mal = mal
 
     def add_withdraw(self, withdraw):
         self.withdraws.append(withdraw)
-        self.withdraws_sum += withdraw
+        self.withdraws_sum = simplify(self.withdraws_sum + withdraw)
 
     def add_deposit(self, deposit):
         self.deposits.append(deposit)
-        self.deposits_sum += deposit
+        self.deposits_sum = simplify(self.deposits_sum + deposit)
 
     def rollback_withdraws(self, call_count):
         for i in range(0,call_count):
-            self.withdraws_sum -= self.withdraws.pop(len(self.withdraws)-1)
+            self.withdraws_sum = simplify(self.withdraws_sum - self.withdraws.pop(len(self.withdraws)-1))
 
     def rollback_deposits(self):
-        self.deposits_sum -= self.deposits.pop(len(self.deposits)-1)
+        self.deposits_sum = simplify(self.deposits_sum - self.deposits.pop(len(self.deposits)-1))
 
+
+    def get_last_deposit(self):
+        if len(self.deposits) <= 0:
+            return 0
+
+        return self.deposits[-1]
+
+    def get_last_withdraw(self):
+        if len(self.withdraws) <= 0:
+            return 0
+
+        return self.withdraws[-1]
 
     def get_withdraws(self):
         return self.withdraws
@@ -274,13 +287,12 @@ def build_cfg_and_analyze(): #cfg 생성 및 실볼릭 실행 수행.
         collect_vertices(tokens)
         construct_bb()
         construct_static_edges()
-        full_sym_exec_1()  # jump targets are constructed on the fly
+        full_sym_exec()  # jump targets are constructed on the fly
 
 def print_cfg():
     for block in vertices.values():
         block.display()
     log.debug(str(edges))
-
 
 def mapping_push_instruction(current_line_content, current_ins_address, idx, positions, length):
     global g_src_map
@@ -461,8 +473,7 @@ def add_falls_to():
             edges[key].append(target)
             vertices[key].set_falls_to(target)
 
-
-def get_init_global_state(path_conditions_and_vars):
+def get_init_global_state(path_conditions_and_vars, user):
     global_state = {"balance" : {}, "pc": 0}
     init_is = init_ia = deposited_value = sender_address = receiver_address = gas_price = origin = currentCoinbase = currentNumber = currentDifficulty = currentGasLimit = callData = None
 
@@ -494,11 +505,16 @@ def get_init_global_state(path_conditions_and_vars):
 
     # for some weird reason these 3 vars are stored in path_conditions insteaad of global_state
     else:
-        sender_address = BitVec("Is", 256)
-        receiver_address = BitVec("Ia", 256)
-        deposited_value = BitVec("Iv", 256)
-        init_is = BitVec("init_Is", 256)
-        init_ia = BitVec("init_Ia", 256)
+        sender_address = user.get_address()  #user0 address 로 설정
+        receiver_address = users[0].get_address()#1~user 중 임의 주소로.
+        deposited_value = user.deposits[-1] #사전 설정한 deposit value로.
+        init_is = static_global_state["balance"][sender_address] #user의 balance.
+        init_ia = static_global_state["balance"][receiver_address] #condtract의 balance.
+        # sender_address = BitVec("Is", 256)
+        # receiver_address = BitVec("Ia", 256)
+        # deposited_value = BitVec("Iv", 256)
+        # init_is = BitVec("init_Is", 256)
+        # init_ia = BitVec("init_Ia", 256)
 
     path_conditions_and_vars["Is"] = sender_address
     path_conditions_and_vars["Ia"] = receiver_address
@@ -511,10 +527,14 @@ def get_init_global_state(path_conditions_and_vars):
     constraint = (init_ia >= BitVecVal(0, 256))
     path_conditions_and_vars["path_condition"].append(constraint)
 
+    for key in static_path_conditions_and_vars["static_vars"]:
+        path_conditions_and_vars[key] = static_path_conditions_and_vars["static_vars"][key]
+
     # update the balances of the "caller" and "callee"
 
     global_state["balance"]["Is"] = (init_is - deposited_value)
     global_state["balance"]["Ia"] = (init_ia + deposited_value)
+    global_state["Ia"] = static_global_state["Ia"]
 
     if not gas_price:
         new_var_name = gen.gen_gas_price_var()
@@ -553,6 +573,7 @@ def get_init_global_state(path_conditions_and_vars):
     # the state of the current current contract
     if "Ia" not in global_state:
         global_state["Ia"] = {}
+
     global_state["miu_i"] = 0
     global_state["value"] = deposited_value
     global_state["sender_address"] = sender_address
@@ -597,6 +618,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
     global calls_affect_state
     global data_source
     global last_opcode
+    global tmp_static_global_state
 
     stack = params.stack
     mem = params.mem
@@ -608,7 +630,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
     calls = params.calls
     overflow_pcs = params.overflow_pcs
     visited_pcs.add(global_state["pc"])
-
     instr_parts = str.split(instr, ' ')
     opcode = instr_parts[0]
     last_opcode = opcode
@@ -644,6 +665,8 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
     #
     if opcode == "STOP":
         global_state["pc"] = global_state["pc"] + 1
+        update_static_global_state(global_state,user)
+        update_static_path_conditions_and_vars(path_conditions_and_vars)
         return
     elif opcode == "ADD":
         if len(stack) > 1:
@@ -1170,6 +1193,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
             if isAllReal(s0, s1):
                 # simulate the hashing of sha3
                 data = [str(x) for x in memory[s0: s0 + s1]]
+                # print(data)
                 position = ''.join(data)
                 position = re.sub('[\s+]', '', position)
                 position = zlib.compress(six.b(position), 9)
@@ -1181,6 +1205,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                     new_var_name = gen.gen_arbitrary_var()
                     new_var = BitVec(new_var_name, 256)
                     sha3_list[position] = new_var
+                    static_sha3_list[position] = new_var
                     stack.insert(0, new_var)
             else:
                 # push into the execution a fresh symbolic variable
@@ -1188,6 +1213,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                 new_var = BitVec(new_var_name, 256)
                 path_conditions_and_vars[new_var_name] = new_var
                 stack.insert(0, new_var)
+            # print("sha3_list : ", sha3_list)
         else:
             raise ValueError('STACK underflow')
     #
@@ -1221,16 +1247,17 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
     elif opcode == "CALLER":  # get caller address
         # that is directly responsible for this execution
         global_state["pc"] = global_state["pc"] + 1
-        #stack.insert(0, global_state["sender_address"])
-        stack.insert(0, int(user.get_address(), 16))
+        stack.insert(0, global_state["sender_address"])
+        #stack.insert(0, int(user.get_address(), 16))
     elif opcode == "ORIGIN":  # get execution origination address
         global_state["pc"] = global_state["pc"] + 1
         stack.insert(0, global_state["origin"])
     elif opcode == "CALLVALUE":  # get value of this transaction
         global_state["pc"] = global_state["pc"] + 1
-        # stack.insert(0, global_state["value"])
-        stack.insert(0, user.get_last_deposit())
+        stack.insert(0, global_state["value"])
+        #stack.insert(0, user.get_last_deposit())
     elif opcode == "CALLDATALOAD":  # from input data from environment
+        # positon 이 0일 경우 function signature 를 불러오도록 수정 필요.
         if len(stack) > 0:
             global_state["pc"] = global_state["pc"] + 1
             position = stack.pop(0)
@@ -1251,7 +1278,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
             if new_var_name in path_conditions_and_vars:
                 new_var = path_conditions_and_vars[new_var_name]
             else:
-                new_var = BitVec(new_var_name + str(exec_count), 256)
+                new_var = BitVec(new_var_name, 256)
                 path_conditions_and_vars[new_var_name] = new_var
             stack.insert(0, new_var)
         else:
@@ -1505,6 +1532,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                 for i in range(31, -1, -1):
                     memory[stored_address + i] = value % 256
                     value /= 256
+                # print(" memory at mstore : ", memory , " address : ", stored_address," value : ", stored_value)
             if isAllReal(stored_address, current_miu_i):
                 if six.PY2:
                     temp = int(math.ceil((stored_address + 32) / float(32)))
@@ -1589,7 +1617,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                             new_var_name = gen.gen_owner_store_var(position)
                     else:
                         new_var_name = gen.gen_owner_store_var(position)
-
                     if new_var_name in path_conditions_and_vars:
                         new_var = path_conditions_and_vars[new_var_name]
                     else:
@@ -1598,8 +1625,13 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                     stack.insert(0, new_var)
                     if isReal(position):
                         global_state["Ia"][position] = new_var
+                        static_global_state["Ia"][position] = new_var
                     else:
                         global_state["Ia"][str(position)] = new_var
+                        static_global_state["Ia"][str(position)] = new_var
+                    #전역 변수 static 환경에 저장.
+                    static_path_conditions_and_vars["static_vars"][new_var_name] = new_var
+
         else:
             raise ValueError('STACK underflow')
 
@@ -1610,12 +1642,15 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
             global_state["pc"] = global_state["pc"] + 1
             stored_address = stack.pop(0)
             stored_value = stack.pop(0)
+            print("stored_address : ", stored_address)
             if isReal(stored_address):
                 # note that the stored_value could be unknown
                 global_state["Ia"][stored_address] = stored_value
+                static_global_state["Ia"][stored_address] = stored_value
             else:
                 # note that the stored_value could be unknown
                 global_state["Ia"][str(stored_address)] = stored_value
+                static_global_state["Ia"][str(stored_address)] = stored_value
         else:
             raise ValueError('STACK underflow')
     elif opcode == "JUMP":
@@ -1736,7 +1771,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
     elif opcode == "CALL":
         # TODO: Need to handle miu_i
         if len(stack) > 6:
-            call_count += 1
             calls.append(global_state["pc"])
             for call_pc in calls:
                 if call_pc not in calls_affect_state:
@@ -1752,7 +1786,6 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
             # in the paper, it is shaky when the size of data output is
             # min of stack[6] and the | o |
 
-            user.add_withdraw(transfer_amount)
             if isReal(transfer_amount):
                 if transfer_amount == 0:
                     stack.insert(0, 1)   # x = 0
@@ -1768,8 +1801,30 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                 # this means not enough fund, thus the execution will result in exception
                 solver.pop()
                 stack.insert(0, 0)   # x = 0
+
             else:
                 # the execution is possibly okay
+
+                user.add_withdraw(transfer_amount)
+                call_count += 1
+                solver.push()
+                solver.add(transfer_amount < user.get_deposits_sum()) # 이부분을 이렇게 넣어줘도 되는 것인가?
+                solver.add(user.get_withdraws_sum() > user.get_deposits_sum())
+
+                if check_sat(solver) == sat:
+
+                    log.info("there is a problem ether flow")
+
+                    log.info(solver)
+                    log.info(solver.model())
+
+                    input()
+                    print("input anything to continue")
+                    solver.pop()
+
+                else:
+                    solver.pop()
+
                 stack.insert(0, 1)   # x = 1
                 solver.pop()
                 solver.add(is_enough_fund)
@@ -1778,11 +1833,13 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                 analysis["time_dependency_bug"][last_idx] = global_state["pc"] - 1
                 new_balance_ia = (balance_ia - transfer_amount)
                 global_state["balance"]["Ia"] = new_balance_ia
+                #address_is = user.get_address()
                 address_is = path_conditions_and_vars["Is"]
-                address_is = (address_is & CONSTANT_ONES_159)
+                #address_is = (address_is & CONSTANT_ONES_159)
                 boolean_expression = (recipient != address_is)
                 solver.push()
                 solver.add(boolean_expression)
+
                 if check_sat(solver) == unsat:
                     solver.pop()
                     new_balance_is = (global_state["balance"]["Is"] + transfer_amount)
@@ -1793,6 +1850,7 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
                         new_address_name = "concrete_address_" + str(recipient)
                     else:
                         new_address_name = gen.gen_arbitrary_address_var()
+
                     old_balance_name = gen.gen_arbitrary_var()
                     old_balance = BitVec(old_balance_name, 256)
                     path_conditions_and_vars[old_balance_name] = old_balance
@@ -1885,8 +1943,12 @@ def sym_exec_ins(params, block, instr, func_call, current_func_name, user):
             if opcode == "REVERT":
                 revertible_overflow_pcs.update(overflow_pcs)
                 global_state["pc"] = global_state["pc"] + 1
+                # update_static_global_state(global_state, user)
+                # update_static_path_conditions_and_vars(path_conditions_and_vars)
                 user.rollback_deposits()
                 user.rollback_withdraws(call_count)
+                revert_static_global_state(tmp_static_global_state)
+
             stack.pop(0)
             stack.pop(0)
             # TODO
@@ -2317,36 +2379,41 @@ def analyze():
 
     run_build_cfg_and_analyze(timeout_cb=timeout_cb)
 
-def gen_rand_addr():
+def gen_rand_addr(): # 주소값을 BitVec 나 BitVecVal로 변경할 필요가 있음.
 
-    global addr_dic
+    global addr_list
 
     addr = random.randrange(1,2**160-1)
-    addr = hex(addr)
+    # addr = hex(addr)
 
-    while (addr in addr_dic):
+    while (addr in addr_list):
         addr = random.randrange(0, 2 ** 160 - 1)
-        addr = hex(addr)
+        # addr = hex(addr)
 
-    addr_dic.insert(len(addr_dic), addr)
+    addr_list.append(addr)
 
     return addr
 
 global users
 users = []
 
-def gen_user(address):
-    return User(address)
+#유
+def gen_user(address, mal):
+    return User(address, mal)
 
 def gen_users(user_num):
 
     for i in range(0, user_num):
         address = gen_rand_addr()
-        users.append(gen_user(address))
+        if i == user_num - 1:
+            users.append(gen_user(address, True))
+        else:
+            users.append(gen_user(address, False))
+
 
 def get_rand_user():
 
-    idx = random.randrange(0, len(users))
+    idx = random.randrange(1, USER_NUM)
     return users[idx]
 
 def get_rand_funcsig(start_block_to_func_sig):
@@ -2357,7 +2424,7 @@ def get_rand_funcsig(start_block_to_func_sig):
 
     return func_sigs_list[idx]
 
-def get_value_name():
+def get_deposit_value_name():
 
     tmp = "in"+str(len(dep_his_all)+1)
 
@@ -2493,55 +2560,101 @@ def partial_initGlobalVars():
     # if global_params.REPORT_MODE:
     #     rfile = open(g_disasm_file + '.report', 'w')
 
-def full_sym_exec_1():
+global static_sha3_list
+static_sha3_list={}
+
+global static_global_state
+static_global_state = {
+    "balance" : {},
+    "state_history" : {},
+    "Ia" : {}
+}
+
+def init_static_global_state(users, USER_NUM):
+    for i in range (0, USER_NUM):
+        static_global_state["balance"][users[i].get_address()] = BitVec("user"+str(i)+"_bal",256)
+
+def update_static_global_state(global_state, user): #실행후 각 실행한 유저와 컨트랙트의 잔액을 유지하기위해 별도로 저장
+    #전역변수는 sload 에서 생성시 추가하
+    global exec_count
+    static_global_state["balance"][users[0].get_address()] = global_state["balance"]["Ia"]
+    static_global_state["balance"][user.get_address()] = global_state["balance"]["Is"]
+    static_global_state["state_history"][exec_count] = global_state
+
+def revert_static_global_state(tmp_static_state):
+    static_global_state = tmp_static_state
+
+global static_path_conditions_and_vars
+static_path_conditions_and_vars = {
+    #전역변수는 sload 와 같은 곳에서 생성시 추가
+    "static_vars" : {},
+    "path_conditions_and_vars_history" : {}
+}
+
+def update_static_path_conditions_and_vars(path_conditions_and_vars):
+    #global_var 추가는 SLOAD 에서 추가
+    global exec_count
+    static_path_conditions_and_vars["path_conditions_and_vars_history"][exec_count] = path_conditions_and_vars
+
+def full_sym_exec():
     # executing, starting from beginning
     global exec_count
     global call_count
     global last_opcode
     global end_ins_dict
+    global tmp_static_global_state
+    global visted_edge_history
+    visted_edge_history = {}
+    global visited_edges
 
-    my_solver = Solver()
+    global EXEC_NUM
+    EXEC_NUM = 500
+    global USER_NUM
+    USER_NUM = 5 #contract 도 하나의 유저로, 순수 유저는 user_num-1 개 생성.
 
-    if g_src_map:
-        start_block_to_func_sig = get_start_block_to_func_sig()
-        print(start_block_to_func_sig)
+    # if g_src_map:
+    #     start_block_to_func_sig = get_start_block_to_func_sig()
+    #     print(start_block_to_func_sig)
 
-    gen_users(5)
+    gen_users(USER_NUM)
+    init_static_global_state(users, USER_NUM)
 
-    for i in range(1, 501):
+    for i in range(1, EXEC_NUM+1):
 
+        # if i > 1:
+        #     visted_edge_history[i-1] = visited_edges
+        print("<<<<<<<<<<<< ", i, "th execution >>>>>>>>>>>>")
+        partial_initGlobalVars()
         call_count = 0
         exec_count = i
         last_opcode = ""
-        print("<<<<<<<<<<<< ", i, "th execution >>>>>>>>>>>>")
-        partial_initGlobalVars()
-        path_conditions_and_vars = {"path_condition": []}
-        global_state = get_init_global_state(path_conditions_and_vars)
+        user = get_rand_user()
+        idx = len(dep_his_all)
+        dep_his_all.append(BitVec(get_deposit_value_name(), 256))
+        tmp = dep_his_all[idx]
+        user.add_deposit(tmp)
+
         analysis = init_analysis()
+
+        path_conditions_and_vars = {"path_condition": []}
+
+        # global state 및 path_conditions 을 새로 생성 하되 전역적으로 유지되어야 하는 값(static_*)은 그대로 전달 하여 새로운 global_state 생성
+
+        global_state = get_init_global_state(path_conditions_and_vars, user)
         params = Parameter(path_conditions_and_vars=path_conditions_and_vars, global_state=global_state,
                            analysis=analysis)
 
-        user = get_rand_user()
-        idx = len(dep_his_all)
-        dep_his_all.append(BitVec(get_value_name(), 256))
-        tmp = dep_his_all[idx]
-        user.add_deposit(tmp)
+        params.sha3_list = static_sha3_list
+        tmp_static_global_state = global_state
+
         sym_exec_single_path(params, 0, 0, 0, -1, 'fallback', user)
-        with_idx = len(user.get_withdraws())
-        if with_idx >= 1:
-            my_solver.push()
-            my_solver.add(user.get_deposits_sum() > user.get_withdraws()[with_idx - 1], user.get_withdraws_sum() > user.get_deposits_sum())
-            if my_solver.check() == sat:
-                print("there is some problem of ether flow at : \n", my_solver.model())
-                my_solver.pop()
-                return
-            else:
-                my_solver.pop()
+
+        # print(static_path_conditions_and_vars)
+        # print(static_global_state)
 
         print(user.get_deposits(), user.get_withdraws())
 
 # Symbolically executing an instruction
-
 # revert 나 stop 까지 하나의 패스를 실행
 def sym_exec_single_path(params, block, pre_block, depth, func_call, current_func_name, user):
     global solver
@@ -2611,6 +2724,8 @@ def sym_exec_single_path(params, block, pre_block, depth, func_call, current_fun
     for instr in block_ins:
         print("     instr : ", instr)
         sym_exec_ins(params, block, instr, func_call, current_func_name, user)
+        # print("     after global state : ", global_state)
+        # print("     after global path_var : ", path_conditions_and_vars)
         # print("     after stack :", stack)
         # print("     after solver : ", solver)
     print("---------------------------")
